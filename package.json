@@ -1,0 +1,9 @@
+{
+  "name": "noah_project",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "csvtojson": "^2.0.8"
+  },
+  "scripts": {}
+}
