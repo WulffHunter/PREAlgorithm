@@ -159,8 +159,7 @@ const analyseAllBlocks = (results, isBilingual) => {
 					if (result.Key[j] === result.Response[j]) {
 						numberWasCorrect.forward[j]++
 					}
-				}
-				for (var j = 0; j < result.Response.length; j++) {
+
 					//Increment the number of times the i'th number appears in the data set
 					(!numberAppeared.backward[j]) ? numberAppeared.backward[j] = 1 : numberAppeared.backward[j]++
 					//If the number never appeared in numberWasCorrect, make the number of times it appeared 0
@@ -180,7 +179,9 @@ const analyseAllBlocks = (results, isBilingual) => {
 			tempResult['forward_' + n] = (numberWasCorrect.forward[n] / numberAppeared.forward[n]) * 100
 			tempResult['backward_' + n] = (numberWasCorrect.backward[n] / numberAppeared.backward[n]) * 100
 		}
-		aggregates.push(tempResult)
+		if (!Number.isNaN(tempResult.forward_0)) {
+			aggregates.push(tempResult)
+		}
 	}
 	return aggregates
 }
