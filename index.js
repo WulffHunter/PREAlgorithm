@@ -1,19 +1,38 @@
+const MAX = 5
+
 const csvPath = './digit_span.csv'
-const csv = require("csvtojson");
+const csv = require("csvtojson")
+const createCsvWriter = require('csv-writer').createObjectCsvWriter;
+var header = []
+for (var i = 0; i < MAX; i++) {
+	header.push({id: ('forward_' + i), title: ('FORWARD_' + i)})
+	header.push({id: ('backward_' + i), title: ('BACKWARD_' + i)})
+}
+const csvWriterAll = createCsvWriter({
+	path: './output/all_participants.csv',
+	header
+})
+const csvWriterMono = createCsvWriter({
+	path: './output/mono_participants.csv',
+	header
+})
+const csvWriterBi = createCsvWriter({
+	path: './output/bi_participants.csv',
+	header
+})
 
 csv()
 .fromFile(csvPath)
 .then((results) => {
-		console.log("\nFor all participants:\n")
-		compareDataForward(results)
-		compareDataBackward(results)
-		console.log("\nFor monolinguals:\n")
-		compareDataForward(results, false)
-		compareDataBackward(results, false)
-		console.log("\nFor bilinguals:\n")
-		compareDataForward(results, true)
-		compareDataBackward(results, true)
+	Promise.all([
+		csvWriterAll.writeRecords(analyseAllBlocks(results)),
+		csvWriterMono.writeRecords(analyseAllBlocks(results, false)),
+		csvWriterBi.writeRecords(analyseAllBlocks(results, true))
+	]).then(() => {
+		console.log("Complete")
 	})
+	
+})
 
 /*
 	JSON object structure:
@@ -102,7 +121,66 @@ function compareDataBackward(results, isBilingual) {
 		}
 	})
 	//For every value in numberAppeared, print its average
- 	for (var n = 0; n < 5; n++) {
- 		console.log(`The ${n}th from last number was correct on average ${(numberWasCorrect.backward[n] / numberAppeared.backward[n]) * 100}% of the time`)
- 	}
+	for (var n = 0; n < 5; n++) {
+		console.log(`The ${n}th from last number was correct on average ${(numberWasCorrect.backward[n] / numberAppeared.backward[n]) * 100}% of the time`)
+	}
+}
+
+const analyseAllBlocks = (results, isBilingual) => {
+	bilString = isBilingual ? 'YES' : 'NO'
+	bilString = (isBilingual === undefined) ? '' : bilString
+	const aggregates = []
+	for (var p = 0; p < results.length; p += 5) {
+		var numberAppeared = {
+			forward: [],
+			backward: []
+		}
+		var numberWasCorrect = {
+			forward: [],
+			backward: []
+		}
+		for (var i = 0; i < 5; i++) {
+			const result = results[p + i]
+			if (
+				result.Response.length > MAX &&
+				(
+					bilString === '' ||
+					result.BIL_EXPOSURE_BEFORE_5.trim() === bilString
+				)
+			) {
+				for (var j = 0; j < result.Response.length; j++) {
+					//Increment the number of times the i'th number appears in the data set
+					(!numberAppeared.forward[j]) ? numberAppeared.forward[j] = 1 : numberAppeared.forward[j]++
+					//If the number never appeared in numberWasCorrect, make the number of times it appeared 0
+					if (numberWasCorrect.forward[j] === undefined) {
+						numberWasCorrect.forward[j] = 0
+					}
+					//If the value was equal to the key, increment the number of times it was correct
+					if (result.Key[j] === result.Response[j]) {
+						numberWasCorrect.forward[j]++
+					}
+				}
+				for (var j = 0; j < result.Response.length; j++) {
+					//Increment the number of times the i'th number appears in the data set
+					(!numberAppeared.backward[j]) ? numberAppeared.backward[j] = 1 : numberAppeared.backward[j]++
+					//If the number never appeared in numberWasCorrect, make the number of times it appeared 0
+					if (numberWasCorrect.backward[j] === undefined) {
+						numberWasCorrect.backward[j] = 0
+					}
+					//If the value was equal to the key, increment the number of times it was correct
+					if (result.Key[(result.Key.length - 1) - j] === result.Response[(result.Response.length - 1) - j]) {
+						numberWasCorrect.backward[j]++
+					}
+				}
+			}
+		}
+		var tempResult = {}
+		//For every value in numberAppeared, print its average
+		for (var n = 0; n < MAX; n++) {
+			tempResult['forward_' + n] = (numberWasCorrect.forward[n] / numberAppeared.forward[n]) * 100
+			tempResult['backward_' + n] = (numberWasCorrect.backward[n] / numberAppeared.backward[n]) * 100
+		}
+		aggregates.push(tempResult)
+	}
+	return aggregates
 }
