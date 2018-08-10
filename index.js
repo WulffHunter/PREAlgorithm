@@ -6,6 +6,8 @@ const createCsvWriter = require('csv-writer').createObjectCsvWriter;
 var header = []
 for (var i = 0; i < MAX; i++) {
 	header.push({id: ('forward_' + i), title: ('FORWARD_' + i)})
+}
+for (var i = 0; i < MAX; i++) {
 	header.push({id: ('backward_' + i), title: ('BACKWARD_' + i)})
 }
 const csvWriterAll = createCsvWriter({
@@ -177,6 +179,8 @@ const analyseAllBlocks = (results, isBilingual) => {
 		//For every value in numberAppeared, print its average
 		for (var n = 0; n < MAX; n++) {
 			tempResult['forward_' + n] = (numberWasCorrect.forward[n] / numberAppeared.forward[n]) * 100
+		}
+		for (var n = 0; n < MAX; n++) {
 			tempResult['backward_' + n] = (numberWasCorrect.backward[n] / numberAppeared.backward[n]) * 100
 		}
 		if (!Number.isNaN(tempResult.forward_0)) {
